@@ -3,7 +3,19 @@
   "extends": [
     "config:base"
   ],
+  "schedule": [
+    "before 4am"
+  ],
   "labels": [
     "dependencies"
+  ],
+  "packageRules": [
+    {
+      "description": "Auto-merge github actions updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "automerge": true
+    }
   ]
 }
