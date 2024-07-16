@@ -7,7 +7,7 @@ require golang.org/x/net v0.27.0
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c
-	github.com/samber/lo v1.45.0
+	github.com/samber/lo v1.46.0
 )
 
 require (
