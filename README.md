@@ -1,10 +1,10 @@
-# Horaires pour la piscine Montherlant
+# Horaires pour les piscines Montherlant et Auteuil
 
 ... en format JSON.
 
 ## Request
 
-`curl localhost:8080/api/horaires-piscine`
+`curl localhost:8080/api/piscine`
 
 ## Response
 
