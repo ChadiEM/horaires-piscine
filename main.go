@@ -29,7 +29,6 @@ var piscineMap = map[string]string{
 func main() {
 	r := gin.Default()
 	r.ForwardedByClientIP = true
-	r.SetTrustedProxies([]string{"127.0.0.1"})
 	r.GET("/api/piscine/:piscine", piscineHandler())
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
