@@ -21,17 +21,22 @@ var replacer = strings.NewReplacer(
 	"Saturday", "Samedi",
 	"Sunday", "Dimanche")
 
+var piscineMap = map[string]string{
+	"montherlant": "https://www.paris.fr/lieux/piscine-henry-de-montherlant-2939",
+	"auteuil":     "https://www.paris.fr/lieux/piscine-d-auteuil-3324",
+}
+
 func main() {
 	r := gin.Default()
 	r.ForwardedByClientIP = true
 	r.SetTrustedProxies([]string{"127.0.0.1"})
-	r.GET("/api/horaires-piscine", piscineHandler())
+	r.GET("/api/piscine/:piscine", piscineHandler())
 	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
 
 func piscineHandler() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		doc, _ := html.Parse(strings.NewReader(OnPage("https://www.paris.fr/lieux/piscine-henry-de-montherlant-2939")))
+		doc, _ := html.Parse(strings.NewReader(OnPage(piscineMap[c.Param("piscine")])))
 		rows := dom.QuerySelectorAll(doc, ".places--schedules-regular-content-title .places--schedules-regular-content-row")
 		var openingHours [14]Availability
 		for index, item := range rows {
@@ -43,8 +48,12 @@ func piscineHandler() func(c *gin.Context) {
 				schedule = dom.QuerySelector(item, ".places--schedules-regular-content-exceptional-sub:not(.smaller)")
 			}
 
+			innerText := dom.InnerText(schedule)
+			innerTextSplitByColumn := strings.Split(innerText, ":")
+			innerTextMinusTitle := innerTextSplitByColumn[len(innerTextSplitByColumn)-1]
+
 			scheduleTrimmed := strings.TrimSpace(
-				dom.InnerText(schedule),
+				innerTextMinusTitle,
 			)
 
 			if strings.Contains(scheduleTrimmed, "Fermé") {
@@ -56,8 +65,12 @@ func piscineHandler() func(c *gin.Context) {
 				scheduleLines := strings.Replace(
 					scheduleTrimmed,
 					" ", "", -1)
+
+				scheduleLinesWithDashFixed := strings.ReplaceAll(
+					scheduleLines, "-", "–")
+
 				realSchedule := strings.Split(
-					scheduleLines,
+					scheduleLinesWithDashFixed,
 					"\n")
 
 				openingHoursSlots := lo.Map[string, Opening](realSchedule, func(x string, _ int) Opening {
