@@ -110,9 +110,12 @@ func OnPage(link string) string {
 		log.Fatal(err)
 	}
 	content, err := io.ReadAll(res.Body)
-	res.Body.Close()
 	if err != nil {
 		log.Fatal(err)
+	}
+	err = res.Body.Close()
+	if err != nil {
+		return ""
 	}
 	return string(content)
 }
