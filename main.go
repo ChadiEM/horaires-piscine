@@ -48,6 +48,8 @@ func piscineHandler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		doc, _ := html.Parse(strings.NewReader(OnPage(piscineMap[c.Param("piscine")])))
 		rows := dom.QuerySelectorAll(doc, ".places--schedules-regular-content-title .places--schedules-regular-content-row")
+
+		var lastIndex int
 		var openingHours [14]Availability
 		for index, item := range rows {
 			weekday := dom.QuerySelector(item, ".places--schedules-regular-content-weekday")
@@ -95,6 +97,19 @@ func piscineHandler() func(c *gin.Context) {
 					Day:          realWeekday,
 					OpeningHours: openingHoursSlots,
 				}
+			}
+
+			lastIndex = index
+		}
+
+		lastIndex++
+
+		// fill remaining hours
+		for i := 0; i < 7 && ((lastIndex + i) < 14); i++ {
+			lastWeekOpening := openingHours[i]
+			openingHours[lastIndex+i] = Availability{
+				Day:          lastWeekOpening.Day,
+				OpeningHours: lastWeekOpening.OpeningHours,
 			}
 		}
 
