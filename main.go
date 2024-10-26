@@ -50,7 +50,7 @@ func piscineHandler() func(c *gin.Context) {
 		rows := dom.QuerySelectorAll(doc, ".places--schedules-regular-content-title .places--schedules-regular-content-row")
 
 		var lastIndex int
-		var openingHours [14]Availability
+		openingHours := make([]Availability, len(rows))
 		for index, item := range rows {
 			weekday := dom.QuerySelector(item, ".places--schedules-regular-content-weekday")
 			realWeekday := dom.InnerText(weekday)
@@ -120,7 +120,7 @@ func piscineHandler() func(c *gin.Context) {
 	}
 }
 
-func getTodayIndex(hours [14]Availability, today string) int {
+func getTodayIndex(hours []Availability, today string) int {
 	for index, item := range hours {
 		if today == item.Day {
 			return index
