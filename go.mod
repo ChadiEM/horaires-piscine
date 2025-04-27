@@ -10,7 +10,7 @@ require (
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c
-	github.com/samber/lo v1.49.1
+	github.com/samber/lo v1.50.0
 )
 
 require (
