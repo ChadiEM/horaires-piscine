@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-shiori/dom"
-	"github.com/samber/lo"
 	"golang.org/x/net/html"
 	"io"
 	"log"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 )
@@ -22,31 +22,40 @@ var replacer = strings.NewReplacer(
 	"Saturday", "Samedi",
 	"Sunday", "Dimanche")
 
-var piscineMap = map[string]string{
-	"montherlant": "https://www.paris.fr/lieux/piscine-henry-de-montherlant-2939",
-	"auteuil":     "https://www.paris.fr/lieux/piscine-d-auteuil-3324",
-}
-
 func main() {
 	r := gin.Default()
 
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept", "User-Agent", "Cache-Control", "Pragma"}
-	config.ExposeHeaders = []string{"Content-Length"}
-	config.AllowCredentials = true
-	config.MaxAge = 12 * time.Hour
+	piscineMap := loadPiscineMap()
 
-	r.Use(cors.New(config))
-
-	r.GET("/api/piscine/:piscine", piscineHandler())
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	r.GET("/api/piscine/:piscine", piscineHandler(piscineMap))
+	r.Run()
 }
 
-func piscineHandler() func(c *gin.Context) {
+func loadPiscineMap() map[string]string {
+	m := make(map[string]string)
+
+	doc, _ := html.Parse(strings.NewReader(OnPage("https://www.paris.fr/lieux/piscines/tous-les-horaires")))
+	rows := dom.QuerySelectorAll(doc, "table.places--timetables-content tbody tr")
+	for _, item := range rows {
+		row := dom.QuerySelector(item, "td:nth-child(1) a")
+		href := dom.GetAttribute(row, "href")
+		afterLieux := strings.Split(href, "/")[2]
+		key := afterLieux[:strings.LastIndex(afterLieux, "-")]
+		m[key] = href
+	}
+
+	return m
+}
+
+func piscineHandler(piscineMap map[string]string) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		doc, _ := html.Parse(strings.NewReader(OnPage(piscineMap[c.Param("piscine")])))
+		value, exists := piscineMap[c.Param("piscine")]
+		if !exists {
+			c.JSON(404, gin.H{"message": "Piscine not found", "availableValues": slices.Collect(maps.Keys(piscineMap))})
+			return
+		}
+
+		doc, _ := html.Parse(strings.NewReader(OnPage("https://www.paris.fr" + value)))
 		rows := dom.QuerySelectorAll(doc, ".places--schedules-regular-content-title .places--schedules-regular-content-row")
 
 		var lastIndex int
@@ -85,13 +94,14 @@ func piscineHandler() func(c *gin.Context) {
 					scheduleLinesWithDashFixed,
 					"\n")
 
-				openingHoursSlots := lo.Map[string, Opening](realSchedule, func(x string, _ int) Opening {
-					split := strings.Split(x, "–")
-					return Opening{
+				openingHoursSlots := make([]Opening, len(realSchedule))
+				for i, schedule := range realSchedule {
+					split := strings.Split(schedule, "–")
+					openingHoursSlots[i] = Opening{
 						Open:  split[0],
 						Close: split[1],
 					}
-				})
+				}
 
 				openingHours[index] = Availability{
 					Day:          realWeekday,
@@ -104,19 +114,17 @@ func piscineHandler() func(c *gin.Context) {
 
 		lastIndex++
 
-		// fill remaining hours
-		for i := 0; i < 7 && ((lastIndex + i) < 14); i++ {
-			lastWeekOpening := openingHours[i]
-			openingHours[lastIndex+i] = Availability{
-				Day:          lastWeekOpening.Day,
-				OpeningHours: lastWeekOpening.OpeningHours,
-			}
-		}
-
+		// fill the remaining hours starting from today and extrapolating into the coming week
 		weekday := time.Now().Weekday().String()
 		todayIndex := getTodayIndex(openingHours, replacer.Replace(weekday))
 
-		c.JSON(http.StatusOK, openingHours[todayIndex:])
+		returnedOpeningHours := make([]Availability, max(7, len(openingHours)))
+		for i := 0; i < len(returnedOpeningHours); i++ {
+			source := openingHours[(todayIndex+i)%len(openingHours)]
+			returnedOpeningHours[i] = source
+		}
+
+		c.JSON(http.StatusOK, returnedOpeningHours)
 	}
 }
 
