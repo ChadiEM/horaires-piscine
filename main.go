@@ -77,7 +77,7 @@ func piscineHandler(piscineMap map[string]string) func(c *gin.Context) {
 				innerTextMinusTitle,
 			)
 
-			if strings.Contains(scheduleTrimmed, "Fermé") {
+			if strings.Contains(scheduleTrimmed, "Fermé") || strings.Contains(scheduleTrimmed, "non renseigné") {
 				openingHours[index] = Availability{
 					Day:          realWeekday,
 					OpeningHours: []Opening{},
@@ -118,7 +118,15 @@ func piscineHandler(piscineMap map[string]string) func(c *gin.Context) {
 		weekday := time.Now().Weekday().String()
 		todayIndex := getTodayIndex(openingHours, replacer.Replace(weekday))
 
-		returnedOpeningHours := make([]Availability, max(7, len(openingHours)))
+		var returnedOpeningHours []Availability
+
+		if len(openingHours) < 7 {
+			// something is wrong
+			returnedOpeningHours = make([]Availability, 0)
+		} else {
+			returnedOpeningHours = make([]Availability, max(7, len(openingHours)))
+		}
+
 		for i := 0; i < len(returnedOpeningHours); i++ {
 			source := openingHours[(todayIndex+i)%len(openingHours)]
 			returnedOpeningHours[i] = source
