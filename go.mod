@@ -5,7 +5,7 @@ go 1.24.2
 require golang.org/x/net v0.40.0
 
 require (
-	github.com/gin-gonic/gin v1.10.0
+	github.com/gin-gonic/gin v1.10.1
 	github.com/go-shiori/dom v0.0.0-20230515143342-73569d674e1c
 )
 
