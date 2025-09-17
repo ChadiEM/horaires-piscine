@@ -6,9 +6,9 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-ADD *.go ./
+COPY . .
 
-RUN go build
+RUN go build -o horaires-piscine /app/cmd/horaires-piscine
 
 FROM alpine:3.22.1
 

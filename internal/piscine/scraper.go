@@ -1,4 +1,4 @@
-package main
+package piscine
 
 import (
 	"io"
@@ -23,16 +23,7 @@ var replacer = strings.NewReplacer(
 	"Saturday", "Samedi",
 	"Sunday", "Dimanche")
 
-func main() {
-	r := gin.Default()
-
-	piscineMap := loadPiscineMap()
-
-	r.GET("/api/piscine/:piscine", piscineHandler(piscineMap))
-	r.Run()
-}
-
-func loadPiscineMap() map[string]string {
+func LoadPiscineMap() map[string]string {
 	m := make(map[string]string)
 
 	doc, _ := html.Parse(strings.NewReader(OnPage("https://www.paris.fr/lieux/piscines/tous-les-horaires")))
@@ -48,7 +39,7 @@ func loadPiscineMap() map[string]string {
 	return m
 }
 
-func piscineHandler(piscineMap map[string]string) func(c *gin.Context) {
+func PiscineHandler(piscineMap map[string]string) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		value, exists := piscineMap[c.Param("piscine")]
 		if !exists {
@@ -160,14 +151,4 @@ func OnPage(link string) string {
 		return ""
 	}
 	return string(content)
-}
-
-type Availability struct {
-	Day          string    `json:"day"`
-	OpeningHours []Opening `json:"opening-hours"`
-}
-
-type Opening struct {
-	Open  string `json:"open"`
-	Close string `json:"close"`
 }
