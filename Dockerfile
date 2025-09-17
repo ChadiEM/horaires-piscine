@@ -2,13 +2,16 @@ FROM golang:1.24.6-alpine AS build
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
 COPY . .
 
-RUN go build -o horaires-piscine /app/cmd/horaires-piscine
+# Build the application
+# CGO_ENABLED=0 is important for static linking when using alpine base image
+# -ldflags "-s -w" reduces the binary size by stripping debug information
+RUN CGO_ENABLED=0 go build -o horaires-piscine -ldflags "-s -w" ./cmd/horaires-piscine
 
 FROM alpine:3.22.1
 
