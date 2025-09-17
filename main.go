@@ -1,9 +1,6 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/go-shiori/dom"
-	"golang.org/x/net/html"
 	"io"
 	"log"
 	"maps"
@@ -11,6 +8,10 @@ import (
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-shiori/dom"
+	"golang.org/x/net/html"
 )
 
 var replacer = strings.NewReplacer(
@@ -56,7 +57,7 @@ func piscineHandler(piscineMap map[string]string) func(c *gin.Context) {
 		}
 
 		doc, _ := html.Parse(strings.NewReader(OnPage("https://www.paris.fr" + value)))
-		rows := dom.QuerySelectorAll(doc, ".places--schedules-regular-content-title .places--schedules-regular-content-row")
+		rows := dom.QuerySelectorAll(doc, ".places--schedules-regular-content-title .places--schedules-regular-content-row")[0:7]
 
 		var lastIndex int
 		openingHours := make([]Availability, len(rows))
