@@ -13,7 +13,7 @@ COPY . .
 # -ldflags "-s -w" reduces the binary size by stripping debug information
 RUN CGO_ENABLED=0 go build -o horaires-piscine -ldflags "-s -w" ./cmd/horaires-piscine
 
-FROM alpine:3.22.2
+FROM alpine:3.23.2
 
 WORKDIR /
 
